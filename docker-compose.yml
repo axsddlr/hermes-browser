@@ -1,0 +1,23 @@
+services:
+  browser:
+    build: .
+    image: hermes-browser:latest
+    container_name: hermes-browser
+    restart: unless-stopped
+    shm_size: 2gb
+    stop_grace_period: 30s
+    environment:
+      VNC_PASSWORD: ${VNC_PASSWORD:?set VNC_PASSWORD in .env}
+      TZ: ${TZ:-UTC}
+      SCREEN_WIDTH: ${SCREEN_WIDTH:-1920}
+      SCREEN_HEIGHT: ${SCREEN_HEIGHT:-1080}
+      CHROME_EXTRA_FLAGS: ${CHROME_EXTRA_FLAGS:-}
+    ports:
+      # Defaults to localhost only. Set BIND_IP to the host's LAN IP so the Hermes LXC can reach it.
+      - "${BIND_IP:-127.0.0.1}:9222:9222"   # CDP (no auth: firewall it to the Hermes LXC)
+      - "${BIND_IP:-127.0.0.1}:6080:6080"   # noVNC
+    volumes:
+      - profile:/data
+
+volumes:
+  profile:

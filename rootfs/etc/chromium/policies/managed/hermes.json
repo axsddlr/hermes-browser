@@ -1,0 +1,8 @@
+{
+  "RestoreOnStartup": 1,
+  "BrowserSignin": 0,
+  "DefaultBrowserSettingEnabled": false,
+  "MetricsReportingEnabled": false,
+  "PromptForDownloadLocation": false,
+  "DownloadDirectory": "/data/downloads"
+}
