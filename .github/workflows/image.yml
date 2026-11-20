@@ -1,0 +1,89 @@
+name: image
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build (amd64, load locally)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: hermes-browser:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Boot container and check CDP + noVNC
+        run: |
+          docker run -d --name hb --shm-size=2g -e VNC_PASSWORD=ci -p 9222:9222 -p 6080:6080 hermes-browser:ci
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:9222/json/version && break
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:9222/json/version | grep -q webSocketDebuggerUrl
+          curl -fsS -o /dev/null http://127.0.0.1:6080/vnc.html
+
+      - name: Smoke test over CDP
+        run: |
+          pip install -q playwright
+          python scripts/smoke_test.py http://127.0.0.1:9222
+
+      - name: Container logs
+        if: always()
+        run: docker logs hb 2>&1 | grep -v dbus | tail -50
+
+  publish:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push (amd64 + arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -17,6 +17,29 @@ curl http://<BIND_IP>:9222/json/version   # should print Chrome version JSON
 
 To watch the browser, open `http://<BIND_IP>:6080/vnc.html` and enter `VNC_PASSWORD`.
 
+## Deploy on a server (prebuilt image)
+
+CI (`.github/workflows/image.yml`) builds, boots and smoke-tests the image on every push to `main`. It then publishes `ghcr.io/axsddlr/hermes-browser` for amd64 and arm64.
+
+| Tag | When |
+|-----|------|
+| `latest` | every push to `main` |
+| `sha-<short>` | every push, for pinning or rollback |
+| `1.2.3`, `1.2` | git tags `v1.2.3` |
+
+The package is private, so the server needs a login once. Create a classic PAT with only the `read:packages` scope (github.com → Settings → Developer settings → Personal access tokens):
+
+```sh
+echo <PAT> | docker login ghcr.io -u axsddlr --password-stdin
+mkdir hermes-browser && cd hermes-browser
+# copy deploy/docker-compose.yml and .env.example (as .env) here, then edit .env:
+#   VNC_PASSWORD=<strong password>
+#   BIND_IP=<server LAN IP>
+docker compose pull && docker compose up -d
+```
+
+Update later with `docker compose pull && docker compose up -d`. The profile volume is kept. To pin a version, set `TAG=sha-abc1234` in `.env`.
+
 ## Point Hermes at it (in the LXC)
 
 `~/.hermes/config.yaml`:

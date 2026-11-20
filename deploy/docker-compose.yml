@@ -1,0 +1,26 @@
+# Server deployment: pulls the CI-built image from GHCR, no source checkout needed.
+# Copy this file and ../.env.example (as .env) to the server, then:
+#   echo <PAT with read:packages> | docker login ghcr.io -u axsddlr --password-stdin
+#   docker compose pull && docker compose up -d
+services:
+  browser:
+    image: ghcr.io/axsddlr/hermes-browser:${TAG:-latest}
+    container_name: hermes-browser
+    restart: unless-stopped
+    shm_size: 2gb
+    stop_grace_period: 30s
+    environment:
+      VNC_PASSWORD: ${VNC_PASSWORD:?set VNC_PASSWORD in .env}
+      TZ: ${TZ:-UTC}
+      SCREEN_WIDTH: ${SCREEN_WIDTH:-1920}
+      SCREEN_HEIGHT: ${SCREEN_HEIGHT:-1080}
+      CHROME_EXTRA_FLAGS: ${CHROME_EXTRA_FLAGS:-}
+    ports:
+      # Set BIND_IP to the server's LAN IP so the Hermes LXC can reach it.
+      - "${BIND_IP:-127.0.0.1}:9222:9222"   # CDP (no auth: firewall it to the Hermes LXC)
+      - "${BIND_IP:-127.0.0.1}:6080:6080"   # noVNC
+    volumes:
+      - profile:/data
+
+volumes:
+  profile:
