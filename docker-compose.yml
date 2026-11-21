@@ -1,7 +1,9 @@
+# Pulls the CI-built image from GHCR. Private package, so log in once:
+#   echo <PAT with read:packages> | docker login ghcr.io -u axsddlr --password-stdin
+#   docker compose pull && docker compose up -d
 services:
   browser:
-    build: .
-    image: hermes-browser:latest
+    image: ghcr.io/axsddlr/hermes-browser:${TAG:-latest}
     container_name: hermes-browser
     restart: unless-stopped
     shm_size: 2gb
@@ -13,7 +15,7 @@ services:
       SCREEN_HEIGHT: ${SCREEN_HEIGHT:-1080}
       CHROME_EXTRA_FLAGS: ${CHROME_EXTRA_FLAGS:-}
     ports:
-      # Defaults to localhost only. Set BIND_IP to the host's LAN IP so the Hermes LXC can reach it.
+      # Set BIND_IP to the server's LAN IP so the Hermes LXC can reach it.
       - "${BIND_IP:-127.0.0.1}:9222:9222"   # CDP (no auth: firewall it to the Hermes LXC)
       - "${BIND_IP:-127.0.0.1}:6080:6080"   # noVNC
     volumes:

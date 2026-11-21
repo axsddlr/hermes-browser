@@ -9,10 +9,18 @@ A headful Chromium in Docker for [Hermes Agent](https://hermes-agent.nousresearc
 
 ## Run
 
+`docker-compose.yml` pulls the prebuilt image from GHCR (see [Deploy on a server](#deploy-on-a-server-prebuilt-image) for the one-time `docker login`):
+
 ```sh
 cp .env.example .env      # set VNC_PASSWORD and BIND_IP (the Docker host's LAN IP)
-docker compose up -d --build
+docker compose pull && docker compose up -d
 curl http://<BIND_IP>:9222/json/version   # should print Chrome version JSON
+```
+
+To build from source instead, add the build override:
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
 
 To watch the browser, open `http://<BIND_IP>:6080/vnc.html` and enter `VNC_PASSWORD`.
@@ -32,7 +40,7 @@ The package is private, so the server needs a login once. Create a classic PAT w
 ```sh
 echo <PAT> | docker login ghcr.io -u axsddlr --password-stdin
 mkdir hermes-browser && cd hermes-browser
-# copy deploy/docker-compose.yml and .env.example (as .env) here, then edit .env:
+# copy docker-compose.yml and .env.example (as .env) here, then edit .env:
 #   VNC_PASSWORD=<strong password>
 #   BIND_IP=<server LAN IP>
 docker compose pull && docker compose up -d
