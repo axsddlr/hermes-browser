@@ -9,7 +9,7 @@ A headful Chromium in Docker for [Hermes Agent](https://hermes-agent.nousresearc
 
 ## Run
 
-`docker-compose.yml` pulls the prebuilt image from GHCR (see [Deploy on a server](#deploy-on-a-server-prebuilt-image) for the one-time `docker login`):
+`docker-compose.yml` pulls the public prebuilt image from GHCR, so no login is needed:
 
 ```sh
 cp .env.example .env      # set VNC_PASSWORD and BIND_IP (the Docker host's LAN IP)
@@ -35,12 +35,13 @@ CI (`.github/workflows/image.yml`) builds, boots and smoke-tests the image on ev
 | `sha-<short>` | every push, for pinning or rollback |
 | `1.2.3`, `1.2` | git tags `v1.2.3` |
 
-The package is private, so the server needs a login once. Create a classic PAT with only the `read:packages` scope (github.com → Settings → Developer settings → Personal access tokens):
+The image is public, so the server only needs two files:
 
 ```sh
-echo <PAT> | docker login ghcr.io -u axsddlr --password-stdin
 mkdir hermes-browser && cd hermes-browser
-# copy docker-compose.yml and .env.example (as .env) here, then edit .env:
+curl -fsSLO https://raw.githubusercontent.com/axsddlr/hermes-browser/main/docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/axsddlr/hermes-browser/main/.env.example -o .env
+# edit .env:
 #   VNC_PASSWORD=<strong password>
 #   BIND_IP=<server LAN IP>
 docker compose pull && docker compose up -d

@@ -1,5 +1,4 @@
-# Pulls the CI-built image from GHCR. Private package, so log in once:
-#   echo <PAT with read:packages> | docker login ghcr.io -u axsddlr --password-stdin
+# Pulls the public CI-built image from GHCR:
 #   docker compose pull && docker compose up -d
 services:
   browser:
